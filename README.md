@@ -1,0 +1,1 @@
+npm install openai @anthropic-ai/sdk @mistralai/mistralai @google/generative-ai axios
