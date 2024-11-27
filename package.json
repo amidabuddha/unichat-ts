@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "test": "node dist/test.js"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "author": "Stefan",
+  "license": "MIT",
+  "description": "Universal API chat Node.js client for OpenAI, MistralAI, Anthropic, xAI, and Google AI.",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
     "@google/generative-ai": "^0.21.0",
@@ -19,5 +20,10 @@
   "devDependencies": {
     "@types/node": "^22.10.0",
     "typescript": "^5.7.2"
+  },
+  "homepage": "https://github.com/amidabuddha/unichat-ts#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/amidabuddha/unichat-ts.git\"
   }
 }

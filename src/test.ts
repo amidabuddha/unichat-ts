@@ -11,7 +11,7 @@ import { UnifiedChatApi } from './unichat';
   ];
 
   try {
-    const response = await api.chat.completions.create('gpt-3.5-turbo', messages, '1.0', streaming);
+    const response = await api.chat.completions.create('gpt-3.5-turbo', messages, undefined, streaming);
     console.log(response);
   } catch (error) {
     console.error(error);

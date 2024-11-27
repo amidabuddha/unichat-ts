@@ -1,6 +1,6 @@
 // Import necessary modules
-import { Configuration, OpenAIApi, ChatCompletionRequestMessage } from 'openai';
-import { Client as AnthropicClient, Message as AnthropicMessage } from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
 import { Mistral } from '@mistralai/mistralai';
 import { GenerativeLanguageServiceClient } from '@google/generative-ai';
 
@@ -104,15 +104,14 @@ class ApiHelper {
       this.api_client = client;
       return client;
     } else if (this.models.anthropic_models.includes(model_name)) {
-      const client = new AnthropicClient(this.api_key);
+      const client = new Anthropic({ apiKey: this.api_key });
       this.api_client = client;
       return client;
     } else if (this.models.grok_models.includes(model_name)) {
-      const configuration = new Configuration({
+      const client = new OpenAI({
         apiKey: this.api_key,
-        basePath: 'https://api.x.ai/v1',
+        baseURL: 'https://api.x.ai/v1',
       });
-      const client = new OpenAIApi(configuration);
       this.api_client = client;
       return client;
     } else if (this.models.gemini_models.includes(model_name)) {
@@ -122,10 +121,9 @@ class ApiHelper {
       this.api_client = client;
       return client;
     } else if (this.models.openai_models.includes(model_name)) {
-      const configuration = new Configuration({
+      const client = new OpenAI({
         apiKey: this.api_key,
       });
-      const client = new OpenAIApi(configuration);
       this.api_client = client;
       return client;
     } else {
@@ -203,11 +201,11 @@ class ChatHelper {
         this.temperature = this.temperature > 1 ? 1 : this.temperature;
         const maxTokens = this.api_helper._get_max_tokens(this.model_name);
         if (this.cached === false) {
-          return this.client.complete({
+          return this.client.messages.create({
             model: this.model_name,
-            maxTokensToSample: maxTokens,
+            max_tokens: maxTokens,
             temperature: this.temperature,
-            prompt: this._formatAnthropicPrompt(this.messages, this.role),
+            messages: this.messages,
             stream: this.stream,
           });
         } else {
@@ -235,24 +233,14 @@ class ChatHelper {
         this.api_helper.models.grok_models.includes(this.model_name) ||
         this.api_helper.models.openai_models.includes(this.model_name)
       ) {
-        const openaiClient = this.client as OpenAIApi;
-        if (this.stream) {
-          return openaiClient.createChatCompletion(
-            {
-              model: this.model_name,
-              messages: this.messages,
-              temperature: this.temperature,
-              stream: true,
-            },
-            { responseType: 'stream' },
-          );
-        } else {
-          return openaiClient.createChatCompletion({
+        return this.client.createChatCompletion(
+          {
             model: this.model_name,
             messages: this.messages,
             temperature: this.temperature,
+            stream: this.stream,
           });
-        }
+        };
       } else {
         throw new Error(`Model ${this.model_name} is currently not supported`);
       }
