@@ -1,12 +1,14 @@
 {
   "name": "unichat-ts",
-  "version": "1.0.0",
-  "main": "index.js",
+  "version": "1.0.6",
+  "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
     "test": "node dist/test.js"
   },
-  "keywords": [],
+  "files": [
+    "dist"
+  ],
   "author": "Stefan",
   "license": "MIT",
   "description": "Universal API chat Node.js client for OpenAI, MistralAI, Anthropic, xAI, and Google AI.",
@@ -24,6 +26,6 @@
   "homepage": "https://github.com/amidabuddha/unichat-ts#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/amidabuddha/unichat-ts.git\"
+    "url": "git+https://github.com/amidabuddha/unichat-ts.git"
   }
 }

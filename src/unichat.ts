@@ -1,63 +1,57 @@
-// Import necessary modules
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import { Mistral } from '@mistralai/mistralai';
-import { GenerativeLanguageServiceClient } from '@google/generative-ai';
 
-import { MODELS_LIST, MODELS_MAX_TOKEN } from './models'
+import { MODELS_LIST, MODELS_MAX_TOKEN } from './models';
 
-// Define types for messages
-interface Message {
-  role: string;
-  content: string;
-}
+import {Role, Message, CreateCompletionOptions} from './types';
 
 export class UnifiedChatApi {
   private api_key: string;
-  private _api_helper: ApiHelper;
+  private api_helper: ApiHelper;
   public chat: Chat;
 
   constructor(api_key: string) {
     this.api_key = api_key;
-    this._api_helper = new ApiHelper(this.api_key);
-    this.chat = new Chat(this._api_helper);
+    this.api_helper = new ApiHelper(this.api_key);
+    this.chat = new Chat(this.api_helper);
   }
 }
 
 class Chat {
-  private _api_helper: ApiHelper;
+  private api_helper: ApiHelper;
   public completions: Completions;
 
-  constructor(_api_helper: ApiHelper) {
-    this._api_helper = _api_helper;
-    this.completions = new Completions(_api_helper);
+  constructor(api_helper: ApiHelper) {
+    this.api_helper = api_helper;
+    this.completions = new Completions(api_helper);
   }
 }
 
 class Completions {
-  private _api_helper: ApiHelper;
-  private _chat_helper: ChatHelper | null;
+  private api_helper: ApiHelper;
+  private chat_helper: ChatHelper | null;
 
-  constructor(_api_helper: ApiHelper) {
-    this._api_helper = _api_helper;
-    this._chat_helper = null;
+  constructor(api_helper: ApiHelper) {
+    this.api_helper = api_helper;
+    this.chat_helper = null;
   }
 
-  public async create(
-    model: string,
-    messages: Message[],
-    temperature: string = '1.0',
-    stream: boolean = true,
-    cached: boolean | string = false,
-  ): Promise<AsyncGenerator<string> | string> {
-    const { client, conversation, role } = this._api_helper._set_defaults(
+  public async create(options: CreateCompletionOptions): Promise<string | AsyncIterable<string>> {
+    const {
       model,
       messages,
-      temperature,
+      temperature = '1.0',
+      stream = true,
+      cached  = false
+    } = options;
+    const { client, conversation, role } = this.api_helper.set_defaults(
+      model,
+      messages,
     );
 
-    this._chat_helper = new ChatHelper(
-      this._api_helper,
+    this.chat_helper = new ChatHelper(
+      this.api_helper,
       model,
       conversation,
       parseFloat(temperature),
@@ -67,11 +61,11 @@ class Completions {
       role,
     );
 
-    const response = await this._chat_helper._get_response();
+    const response = await this.chat_helper.get_response();
     if (stream) {
-      return this._chat_helper._handle_stream(response);
+      return this.chat_helper.handle_stream(response);
     } else {
-      return this._chat_helper._handle_response(response);
+      return await this.chat_helper.handle_response(response);
     }
   }
 }
@@ -90,63 +84,52 @@ class ApiHelper {
     this.api_client = null;
   }
 
-  private _get_max_tokens(model_name: string): number {
-    return this.max_tokens[model_name] || ApiHelper.DEFAULT_MAX_TOKENS;
+  public get_max_tokens(model_name: string): number {
+    return Number(this.max_tokens[model_name]) || ApiHelper.DEFAULT_MAX_TOKENS;
   }
 
-  public _get_client(model_name: string, temperature: string, role: string = ''): any {
+  public get_client(model_name: string): any {
     if (this.api_client) {
       return this.api_client;
     }
-
+    let client = undefined;
     if (this.models.mistral_models.includes(model_name)) {
-      const client = new Mistral({ apiKey: this.api_key });
-      this.api_client = client;
-      return client;
+      client = new Mistral({ apiKey: this.api_key });
     } else if (this.models.anthropic_models.includes(model_name)) {
-      const client = new Anthropic({ apiKey: this.api_key });
-      this.api_client = client;
-      return client;
+      client = new Anthropic({ apiKey: this.api_key });
     } else if (this.models.grok_models.includes(model_name)) {
-      const client = new OpenAI({
+      client = new OpenAI({
         apiKey: this.api_key,
         baseURL: 'https://api.x.ai/v1',
       });
-      this.api_client = client;
-      return client;
     } else if (this.models.gemini_models.includes(model_name)) {
-      const client = new GenerativeLanguageServiceClient({
-        apiKey: this.api_key,
+      client = new OpenAI({
+        apiKey: 'GEMINI_API_KEY',
+        baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
       });
-      this.api_client = client;
-      return client;
     } else if (this.models.openai_models.includes(model_name)) {
-      const client = new OpenAI({
-        apiKey: this.api_key,
-      });
-      this.api_client = client;
-      return client;
+      client = new OpenAI({ apiKey: this.api_key });
     } else {
       throw new Error(`Model '${model_name}' not found.`);
     }
+
+    this.api_client = client;
+    return client;
   }
 
-  public _set_defaults(
+  public set_defaults(
     model_name: string,
-    conversation: Message[],
-    temperature: string,
-  ): { client: any; conversation: Message[]; role: string } {
+    conversation: any[],
+  ) {
     let role = '';
     if (
       this.models.anthropic_models.includes(model_name) ||
-      this.models.gemini_models.includes(model_name) ||
       model_name.startsWith('o1')
     ) {
       role = conversation[0]?.role === 'system' ? conversation[0].content : '';
       conversation = conversation.filter((message) => message.role !== 'system');
     }
-
-    const client = this._get_client(model_name, temperature, role);
+    const client = this.get_client(model_name);
     return { client, conversation, role };
   }
 }
@@ -181,17 +164,17 @@ class ChatHelper {
     this.role = role;
   }
 
-  public async _get_response(): Promise<any> {
+  public async get_response() {
     try {
       if (this.api_helper.models.mistral_models.includes(this.model_name)) {
         if (this.stream) {
-          return this.client.chat.stream({
+          return await this.client.chat.stream({
             model: this.model_name,
             temperature: this.temperature,
             messages: this.messages,
           });
         } else {
-          return this.client.chat.complete({
+          return await this.client.chat.complete({
             model: this.model_name,
             temperature: this.temperature,
             messages: this.messages,
@@ -199,53 +182,45 @@ class ChatHelper {
         }
       } else if (this.api_helper.models.anthropic_models.includes(this.model_name)) {
         this.temperature = this.temperature > 1 ? 1 : this.temperature;
-        const maxTokens = this.api_helper._get_max_tokens(this.model_name);
+        const maxTokens = this.api_helper.get_max_tokens(this.model_name);
         if (this.cached === false) {
-          return this.client.messages.create({
+          return await this.client.messages.create({
             model: this.model_name,
             max_tokens: maxTokens,
             temperature: this.temperature,
+            system: this.role,
             messages: this.messages,
             stream: this.stream,
           });
         } else {
-          // Handle cached responses (ephemeral messages)
-          // Implement caching if necessary
+          return await this.client.beta.prompt_caching.message.create({
+            model: this.model_name,
+            max_tokens: maxTokens,
+            temperature: this.temperature,
+            system: [
+                {"type": "text", "text": this.role},
+                {"type": "text", "text": this.cached, "cache_control": {"type": "ephemeral"}},
+            ],
+            messages: this.messages,
+            stream: this.stream,
+          })
         }
-      } else if (this.api_helper.models.gemini_models.includes(this.model_name)) {
-        const formattedMessages = this.messages.map((item) => ({
-          role: item.role === 'assistant' ? 'model' : item.role,
-          content: item.content,
-        }));
-        const client = this.client as GenerativeLanguageServiceClient;
-        const [response] = await client.generateMessage({
-          model: this.model_name,
-          prompt: {
-            context: this.role,
-            messages: formattedMessages.slice(0, -1),
-          },
-          message: formattedMessages[formattedMessages.length - 1].content,
-          temperature: this.temperature,
-          candidateCount: 1,
-        });
-        return response;
       } else if (
         this.api_helper.models.grok_models.includes(this.model_name) ||
-        this.api_helper.models.openai_models.includes(this.model_name)
+        this.api_helper.models.openai_models.includes(this.model_name) ||
+        this.api_helper.models.gemini_models.includes(this.model_name)
       ) {
-        return this.client.createChatCompletion(
-          {
-            model: this.model_name,
-            messages: this.messages,
-            temperature: this.temperature,
-            stream: this.stream,
-          });
-        };
+        return await this.client.chat.completions.create({
+          model: this.model_name,
+          messages: this.messages,
+          temperature: this.temperature,
+          stream: this.stream,
+        });
       } else {
         throw new Error(`Model ${this.model_name} is currently not supported`);
       }
     } catch (e: any) {
-      if (e.isAxiosError && e.response) {
+      if (e.response) {
         throw new Error(
           `API status error: ${e.response.status} - ${e.response.data.error.message}`,
         );
@@ -255,33 +230,17 @@ class ChatHelper {
     }
   }
 
-  private _formatAnthropicPrompt(messages: Message[], role: string): string {
-    const systemPrompt = role ? `\
-\
-System: ${role}` : '';
-    const formattedMessages = messages
-      .map((msg) => `\
-\
-${msg.role === 'assistant' ? 'Assistant' : 'Human'}: ${msg.content}`)
-      .join('');
-    return `${systemPrompt}${formattedMessages}\
-\
-Assistant:`;
-  }
-
-  public async _handle_response(response: any): Promise<string> {
+  public async handle_response(response: any): Promise<string> {
     try {
-      if (this.api_helper.models.mistral_models.includes(this.model_name)) {
-        return response.choices[0].message.content;
-      } else if (this.api_helper.models.anthropic_models.includes(this.model_name)) {
+      if (this.api_helper.models.anthropic_models.includes(this.model_name)) {
         return response.completion;
-      } else if (this.api_helper.models.gemini_models.includes(this.model_name)) {
-        return response.candidates[0].content;
       } else if (
+        this.api_helper.models.mistral_models.includes(this.model_name) ||
+        this.api_helper.models.gemini_models.includes(this.model_name) ||
         this.api_helper.models.grok_models.includes(this.model_name) ||
         this.api_helper.models.openai_models.includes(this.model_name)
       ) {
-        return response.data.choices[0].message.content;
+        return response.choices[0].message.content;
       } else {
         throw new Error(`Model ${this.model_name} is currently not supported`);
       }
@@ -290,25 +249,31 @@ Assistant:`;
     }
   }
 
-  public async *_handle_stream(response: any): AsyncGenerator<string> {
+  public async *handle_stream(response: any): AsyncGenerator<string, void,
+  unknown> {
     try {
-      if (this.api_helper.models.mistral_models.includes(this.model_name)) {
+      if (this.api_helper.models.anthropic_models.includes(this.model_name)) {
         for await (const chunk of response) {
-          yield chunk.choices[0].delta.content || '';
+          if (chunk.type == "content_block_delta") {
+            yield chunk.delta.text;
+          }
         }
-      } else if (this.api_helper.models.anthropic_models.includes(this.model_name)) {
-        for await (const data of response) {
-          yield data.completion || '';
-        }
-      } else if (this.api_helper.models.gemini_models.includes(this.model_name)) {
-        // Implement streaming for Gemini models if supported
       } else if (
+          this.api_helper.models.mistral_models.includes(this.model_name)
+        ) {
+          for await (const chunk of response) {
+            const content = chunk.data.choices[0].delta.content;
+            if (content) {
+              yield content;
+            }
+          }
+      } else if (
+        this.api_helper.models.gemini_models.includes(this.model_name) ||
         this.api_helper.models.grok_models.includes(this.model_name) ||
         this.api_helper.models.openai_models.includes(this.model_name)
       ) {
-        const stream = response.data;
-        for await (const chunk of stream) {
-          const content = chunk.choices[0].delta?.content;
+        for await (const chunk of response) {
+          const content = chunk.choices[0].delta.content;
           if (content) {
             yield content;
           }

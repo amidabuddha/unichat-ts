@@ -26,7 +26,7 @@ export const MODELS_LIST =  {
         "gemini-exp-1121"
     ]
 }
-export const MODELS_MAX_TOKEN =  {
+export const MODELS_MAX_TOKEN: Record<string, string> =  {
     "gpt-3.5-turbo": "4096",
     "gpt-4o-mini": "16384",
     "gpt-4o": "16384",
