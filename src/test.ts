@@ -1,10 +1,8 @@
 import * as readline from 'readline';
 import { UnifiedChatApi } from './index';
 import { MODELS_LIST } from './index';
-import { Role } from './index';
+import { Role, Message } from './index';
 import process from 'process';
-
-
 
 // Function to validate inputs
 function validateInputs(apiKey: string, modelName: string): void {
@@ -57,7 +55,7 @@ async function main() {
     }
 
     // Initialize the conversation
-    const conversation: any[] = [];
+    const conversation: Message[] = [];
     conversation.push({ role: Role.System, content: system });
 
     // Start the chat loop
