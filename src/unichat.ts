@@ -104,7 +104,7 @@ class ApiHelper {
       });
     } else if (this.models.gemini_models.includes(model_name)) {
       client = new OpenAI({
-        apiKey: 'GEMINI_API_KEY',
+        apiKey: this.api_key,
         baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
       });
     } else if (this.models.openai_models.includes(model_name)) {
@@ -233,10 +233,10 @@ class ChatHelper {
   public async handle_response(response: any): Promise<string> {
     try {
       if (this.api_helper.models.anthropic_models.includes(this.model_name)) {
-        return response.completion;
+        return response.content[0].text;
       } else if (
-        this.api_helper.models.mistral_models.includes(this.model_name) ||
         this.api_helper.models.gemini_models.includes(this.model_name) ||
+        this.api_helper.models.mistral_models.includes(this.model_name) ||
         this.api_helper.models.grok_models.includes(this.model_name) ||
         this.api_helper.models.openai_models.includes(this.model_name)
       ) {

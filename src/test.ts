@@ -1,7 +1,7 @@
 import * as readline from 'readline';
 import { UnifiedChatApi } from './index';
 import { MODELS_LIST } from './index';
-import { Role, Message } from './index';
+import { Role } from './index';
 import process from 'process';
 
 
@@ -39,6 +39,10 @@ async function main() {
     // Prompt the user for necessary inputs
     const apiKey = await promptInput("Enter your API key: ");
     const modelName = await promptInput("Enter the model name (e.g., 'gpt-4o-mini'): ");
+    let streaming: string | boolean = await promptInput("Type anything to disable streaming or ENTER to continue: ")
+    if (!streaming) {
+      streaming = true;
+    }
 
     // Validate inputs
     validateInputs(apiKey, modelName);
@@ -53,7 +57,7 @@ async function main() {
     }
 
     // Initialize the conversation
-    const conversation: Message[] = [];
+    const conversation: any[] = [];
     conversation.push({ role: Role.System, content: system });
 
     // Start the chat loop
@@ -73,17 +77,27 @@ async function main() {
       conversation.push({ role: Role.User, content: userMessage });
 
       try {
-        // Call the chat completion API with streaming
         let assistantResponse = "";
-        process.stdout.write("\nAssistant: ");
+        if (streaming === true) {
+          // Call the chat completion API with streaming
+          process.stdout.write("\nAssistant: ");
 
-        for await (const chunk of await client.chat.completions.create({
-          model: modelName,
-          messages: conversation
-        })) {
-          assistantResponse += chunk;
-          process.stdout.write(chunk);
-        }
+          for await (const chunk of await client.chat.completions.create({
+            model: modelName,
+            messages: conversation
+          })) {
+            assistantResponse += chunk;
+            process.stdout.write(chunk);
+          }
+        } else {
+          // Call the chat completion API with streaming
+          let assistantResponse = await client.chat.completions.create({
+            model: modelName,
+            messages: conversation,
+            stream: false
+          });
+          console.log(assistantResponse)
+        };
 
         console.log(); // Move to the next line after assistant finishes
         // Add assistant's response to conversation
