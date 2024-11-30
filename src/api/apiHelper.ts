@@ -7,7 +7,7 @@ import { MODELS_LIST, MODELS_MAX_TOKEN } from "../models";
 export class ApiHelper {
     private api_key: string;
     public readonly models: any;
-    private max_tokens: any;
+    private max_tokens: Record<string, number>;
     private api_client: any;
     private static DEFAULT_MAX_TOKENS: number = 4096;
 
@@ -19,7 +19,7 @@ export class ApiHelper {
     }
 
     public get_max_tokens(model_name: string): number {
-      return Number(this.max_tokens[model_name]) || ApiHelper.DEFAULT_MAX_TOKENS;
+      return this.max_tokens[model_name] || ApiHelper.DEFAULT_MAX_TOKENS;
     }
 
     public get_client(model_name: string): any {
