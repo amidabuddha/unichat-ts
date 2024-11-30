@@ -22,11 +22,10 @@ export const MODELS_LIST =  {
     "gemini_models": [
         "gemini-1.5-flash",
         "gemini-1.5-pro",
-        "gemini-exp-1121",
-        "gemini-exp-1114"
+        "gemini-exp-1121"
     ]
 }
-export const MODELS_MAX_TOKEN: Record<string, string> =  {
+export const MODELS_MAX_TOKEN: Record<string, number> =  {
     "gpt-3.5-turbo": 4096,
     "gpt-4o-mini": 16384,
     "gpt-4o": 16384,
@@ -41,6 +40,5 @@ export const MODELS_MAX_TOKEN: Record<string, string> =  {
     "grok-beta": 131072,
     "gemini-1.5-flash": 8192,
     "gemini-1.5-pro": 8192,
-    "gemini-exp-1121": 8192,
-    "gemini-exp-1114": 8192
+    "gemini-exp-1121": 8192
 }
