@@ -56,12 +56,16 @@ export class ApiHelper {
       conversation: any[],
     ) {
       let role = '';
-      if (
-        this.models.anthropic_models.includes(model_name) ||
-        model_name.startsWith('o1')
-      ) {
+      if (this.models.anthropic_models.includes(model_name)) {
         role = conversation[0]?.role === 'system' ? conversation[0].content : '';
         conversation = conversation.filter((message) => message.role !== 'system');
+      } else if (model_name.startsWith('o1')) {
+        if (conversation[0]?.role === 'system') {
+          const system_content = conversation[0].content;
+          conversation[1].content = `${system_content}\n\n${conversation[1].content}`;
+          conversation = conversation.filter((message) => message.role !== 'system');
+        }
+        role = '';
       }
       const client = this.get_client(model_name);
       return { client, conversation, role };
