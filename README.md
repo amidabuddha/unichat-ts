@@ -14,7 +14,7 @@ npm publish
 
 ## Usage:
 
-1. Install the pip package:
+1. Install the npm package:
 
 ```shell
 npm install unichat-ts
