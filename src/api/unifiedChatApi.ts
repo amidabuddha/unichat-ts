@@ -1,4 +1,4 @@
-import { CreateCompletionOptions } from '../types';
+import { CreateCompletionOptions, GPTResponse, InputTool, OpenAIChunk, OriginalTool } from '../types';
 import { ApiHelper } from './apiHelper';
 import { ChatHelper } from './chatHelper';
 
@@ -33,24 +33,32 @@ class Completions {
     this.chat_helper = null;
   }
 
-  public async create(options: CreateCompletionOptions): Promise<string | AsyncIterable<string>> {
+  public async create(options: CreateCompletionOptions) {
     const {
       model,
       messages,
       temperature = '1.0',
+      tools = [],
       stream = true,
       cached  = false
     } = options;
+
     const { client, conversation, role } = this.api_helper.set_defaults(
       model,
       messages,
     );
+
+    let inputTools: InputTool[] = [];
+    if (tools) {
+      inputTools = this.api_helper.normalizeTools(tools);
+    }
 
     this.chat_helper = new ChatHelper(
       this.api_helper,
       model,
       conversation,
       parseFloat(temperature),
+      inputTools,
       stream,
       cached,
       client,
@@ -61,10 +69,7 @@ class Completions {
     if (stream) {
       return this.chat_helper.handle_stream(response);
     } else {
-      return await this.chat_helper.handle_response(response);
+      return this.chat_helper.handle_response(response);
     }
   }
 }
-
-
-
