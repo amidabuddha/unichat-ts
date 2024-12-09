@@ -3,7 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { Mistral } from '@mistralai/mistralai';
 
 import { MODELS_LIST, MODELS_MAX_TOKEN } from "../models";
-import { AnthropicChunk, ClaudeResponse, ContentBlock, GPTChoice, GPTResponse, GPTToolCall, InputSchema, InputTool, Message, OpenAIChunk, OriginalTool, OutputFunction, OutputTool, Role, TextContent, ToolResponse, ToolUseContent, TransformedResponse } from '../types';
+import { AnthropicChunk, ClaudeResponse, ContentBlock, GPTChoice, GPTResponse, GPTToolCall, InputSchema, InputTool, Message, OpenAIChunk, OriginalTool, OutputTool, Role, TextContent, ToolResponse, ToolUseContent } from '../types';
 
 export class ApiHelper {
   private api_key: string;
@@ -307,59 +307,35 @@ export class ApiHelper {
 
   public transformMessages(messages: Message[]): Message[] {
     const transformedMessages: Message[] = [];
-    let toolMessages: ToolResponse[] = [];
-    let lastAssistantToolCalls: GPTToolCall[] | undefined;
 
-    for (const message of messages) {
+    for (let i = 0; i < messages.length; i++) {
+        const message = messages[i];
+
         if (message.role === Role.Assistant && message.tool_calls) {
-            // Store tool calls for the next transformation
-            lastAssistantToolCalls = message.tool_calls;
-            // Transform the assistant message
+            // Transform and add the assistant message
             transformedMessages.push({
                 role: Role.Assistant,
                 content: this.transformToolCalls(message.tool_calls)
             });
-        }
-        else if (message.role === Role.Tool && message.tool_call_id) {
-            // Collect tool messages
-            toolMessages.push({
-                role: Role.Tool,
-                content: message.content,
-                tool_call_id: message.tool_call_id
-            });
-        }
-        else {
-            // If we have collected tool messages, transform and add them
-            if (toolMessages.length > 0) {
-                const transformedResponse: TransformedResponse = {
+
+            // Look ahead for the corresponding tool response
+            if (i + 1 < messages.length && messages[i + 1].role === Role.Tool) {
+                const toolMsg = messages[i + 1];
+                transformedMessages.push({
                     role: Role.User,
-                    content: toolMessages.map(toolMsg => ({
+                    content: [{
                         type: 'tool_result',
                         tool_use_id: toolMsg.tool_call_id,
                         content: toolMsg.content,
-                    }))
-                };
-                transformedMessages.push(transformedResponse);
-                toolMessages = []; // Clear collected tool messages
+                    }]
+                });
+                i++; // Skip the tool message since we've handled it
             }
-            // Add non-tool message
+        } else if (message.role !== Role.Tool) { // Skip tool messages as they're handled above
             transformedMessages.push(message);
         }
     }
 
-    // Handle any remaining tool messages at the end
-    if (toolMessages.length > 0) {
-        const transformedResponse: TransformedResponse = {
-            role: Role.User,
-            content: toolMessages.map(toolMsg => ({
-                type: 'tool_result',
-                tool_use_id: toolMsg.tool_call_id,
-                content: toolMsg.content,
-            }))
-        };
-        transformedMessages.push(transformedResponse);
-    }
-
     return transformedMessages;
-  }
+}
 }

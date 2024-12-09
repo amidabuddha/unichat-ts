@@ -225,7 +225,7 @@ export interface ToolResponse {
 
 export interface ToolResult {
     type: 'tool_result';
-    tool_use_id: string;
+    tool_use_id?: string;
     content: any;
 }
 

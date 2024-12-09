@@ -56,6 +56,7 @@ export class ChatHelper {
         this.temperature = this.temperature > 1 ? 1 : this.temperature;
         const maxTokens = this.api_helper.get_max_tokens(this.model_name);
         const anthropicMessages = this.api_helper.transformMessages(this.messages)
+        // console.log("DEBUG: antropic message: ", JSON.stringify(anthropicMessages, null, 2))
         if (this.cached === false) {
           return await this.client.messages.create({
             model: this.model_name,
@@ -112,7 +113,7 @@ export class ChatHelper {
         response = this.api_helper.convertClaudeToGPT(response)
       }
       // TODO mistral tools
-      console.log("DEBUG: response: ", JSON.stringify(response, null, 2))
+      // console.log("DEBUG: response: ", JSON.stringify(response, null, 2))
       return response
 
     } catch (e: any) {
@@ -143,7 +144,7 @@ export class ChatHelper {
       // TODO gemini tools
       // TODO grok tools
       for await (const chunk of response) {
-        console.log("DEBUG: stream: ", JSON.stringify(chunk, null, 2))
+        // console.log("DEBUG: stream: ", JSON.stringify(chunk, null, 2))
         yield chunk;
       }
 

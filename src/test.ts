@@ -83,7 +83,9 @@ async function handleStreamingResponse(
   responseStream: AsyncIterable<OpenAIChunk, any, any>,
   conversation: Message[]
 ): Promise<void> {
-  process.stdout.write("\nAssistant: ");
+  if (conversation.at(-1)?.role !== Role.Tool) {
+    process.stdout.write("\nAssistant: ");
+  }
 
   let currentContent = "";
   let isCollectingFunctionArgs = false;
@@ -103,7 +105,7 @@ async function handleStreamingResponse(
           type: 'function',
           function: {
             name: toolCall.function?.name || "",
-            arguments: toolCall.function?.name || ""
+            arguments: toolCall.function?.arguments || ""
           }
         }))
       };
@@ -231,7 +233,6 @@ async function handleNonStreamingResponse(
           tool_call_id: tool.id
         };
 
-        console.log(`Calculator result: ${result}`);
         conversation.push(toolResponse);
       }
     }
@@ -287,7 +288,6 @@ async function main() {
             model: modelName,
             messages: conversation,
             tools: tools,
-            stream: true
           });
 
           await handleStreamingResponse(responseStream, conversation);
