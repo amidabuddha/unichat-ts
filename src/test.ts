@@ -85,9 +85,6 @@ async function handleStreamingResponse(
 ): Promise<void> {
   process.stdout.write("\nAssistant: ");
 
-  let functionArguments: { [key: string]: string } = {};
-  let functionNames: { [key: string]: string } = {};
-  let functionIds = new Set<string>();
   let currentContent = "";
   let isCollectingFunctionArgs = false;
   let currentAssistantMessage: Message | null = null;
@@ -97,42 +94,25 @@ async function handleStreamingResponse(
     const finishReason = chunk.choices[0].finish_reason;
 
     // Initialize message structure on first assistant chunk
-    if (delta.role === 'assistant') {
+    if (!currentAssistantMessage && delta.role === 'assistant' && delta.tool_calls) {
+      currentAssistantMessage = {
+        role: Role.Assistant,
+        content: delta.content,
+        tool_calls: delta.tool_calls.map(toolCall => ({
+          id: toolCall.id,
+          type: 'function',
+          function: {
+            name: toolCall.function?.name || "",
+            arguments: toolCall.function?.name || ""
+          }
+        }))
+      };
+      continue;
+    } else if (!currentAssistantMessage && delta.role === 'assistant') {
       currentAssistantMessage = {
         role: Role.Assistant,
         content: delta.content,
       };
-
-      // Check for tool_calls in the first chunk
-      if (delta.tool_calls && delta.tool_calls.length > 0) {
-        currentAssistantMessage.tool_calls = delta.tool_calls.map(() => ({
-          id: "",
-          type: "function",
-          function: {
-            name: "",
-            arguments: ""
-          }
-        }));
-
-        // Process the tool data from first chunk
-        isCollectingFunctionArgs = true;
-        delta.tool_calls.forEach((toolCall: GPTToolCall, index: number) => {
-          if (toolCall.id) {
-            currentAssistantMessage!.tool_calls![index].id = toolCall.id;
-            functionIds.add(toolCall.id);
-          }
-
-          if (toolCall.function?.name) {
-            currentAssistantMessage!.tool_calls![index].function.name = toolCall.function.name;
-            functionNames[toolCall.id || ""] = toolCall.function.name;
-          }
-
-          if (toolCall.function?.arguments) {
-            functionArguments[toolCall.id || ""] = toolCall.function.arguments;
-            currentAssistantMessage!.tool_calls![index].function.arguments = toolCall.function.arguments;
-          }
-        });
-      }
       continue;
     }
 
@@ -145,36 +125,30 @@ async function handleStreamingResponse(
       }
     }
 
-    // Handle tool calls in subsequent chunks
-    if (delta.tool_calls) {
+    // Handle tool calls
+    if (delta.tool_calls && currentAssistantMessage) {
       isCollectingFunctionArgs = true;
 
-      // Initialize tool_calls array if we encounter tool_calls for the first time
-      if (!currentAssistantMessage?.tool_calls) {
-        currentAssistantMessage!.tool_calls = delta.tool_calls.map(() => ({
-          id: "",
-          type: "function",
-          function: {
-            name: "",
-            arguments: ""
-          }
-        }));
+      // Initialize tool_calls array if it doesn't exist
+      if (!currentAssistantMessage.tool_calls) {
+        currentAssistantMessage.tool_calls = delta.tool_calls;
+        continue;
       }
 
-      delta.tool_calls.forEach((toolCall: GPTToolCall, index: number) => {
-        if (toolCall.id) {
-          currentAssistantMessage!.tool_calls![index].id = toolCall.id;
-          functionIds.add(toolCall.id);
-        }
+      delta.tool_calls.forEach((toolCall: GPTToolCall) => {
+        // Find the matching tool call by index
+        const toolCallIndex = toolCall.index || 0;
+        const existingToolCall = currentAssistantMessage!.tool_calls![toolCallIndex];
 
-        if (toolCall.function?.name) {
-          currentAssistantMessage!.tool_calls![index].function.name = toolCall.function.name;
-          functionNames[toolCall.id || ""] = toolCall.function.name;
-        }
-
-        if (toolCall.function?.arguments) {
-          functionArguments[toolCall.id || ""] = (functionArguments[toolCall.id || ""] || "") + toolCall.function.arguments;
-          currentAssistantMessage!.tool_calls![index].function.arguments = functionArguments[toolCall.id || ""];
+        if (existingToolCall) {
+          // Update name if provided
+          if (toolCall.function?.name) {
+            existingToolCall.function.name = toolCall.function.name;
+          }
+          // Append arguments if provided
+          if (toolCall.function?.arguments) {
+            existingToolCall.function.arguments += toolCall.function.arguments;
+          }
         }
       });
     }
@@ -190,13 +164,13 @@ async function handleStreamingResponse(
 
           // Execute each tool and add responses
           if (currentAssistantMessage?.tool_calls){
-            for (const toolCall of currentAssistantMessage?.tool_calls) {
+            for (const toolCall of currentAssistantMessage.tool_calls) {
               const args = JSON.parse(toolCall.function.arguments);
               const functionName = toolCall.function.name;
 
               if (functionName === "calculator") {
                 const result = calculate(
-                  args.operation,
+                  args.operation as Operation,
                   Number(args.operand1),
                   Number(args.operand2)
                 );
@@ -215,9 +189,6 @@ async function handleStreamingResponse(
         }
 
         // Reset function call state
-        functionArguments = {};
-        functionNames = {};
-        functionIds.clear();
         isCollectingFunctionArgs = false;
       } else if (finishReason === "stop") {
         // Add final assistant message to conversation
@@ -330,7 +301,7 @@ async function main() {
 
           await handleNonStreamingResponse(response, conversation);
         }
-
+        console.log("DEBUG: conversation: ", JSON.stringify(conversation, null, 2))
         console.log('\n');
 
       } catch (error: any) {

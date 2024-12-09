@@ -112,6 +112,7 @@ export class ChatHelper {
         response = this.api_helper.convertClaudeToGPT(response)
       }
       // TODO mistral tools
+      console.log("DEBUG: response: ", JSON.stringify(response, null, 2))
       return response
 
     } catch (e: any) {
@@ -142,6 +143,7 @@ export class ChatHelper {
       // TODO gemini tools
       // TODO grok tools
       for await (const chunk of response) {
+        console.log("DEBUG: stream: ", JSON.stringify(chunk, null, 2))
         yield chunk;
       }
 
