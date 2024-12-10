@@ -1,4 +1,4 @@
-import { CreateCompletionOptions, GPTResponse, InputTool, OpenAIChunk, OriginalTool } from '../types';
+import { CreateCompletionOptions, InputTool } from '../types';
 import { ApiHelper } from './apiHelper';
 import { ChatHelper } from './chatHelper';
 
@@ -15,11 +15,9 @@ export class UnifiedChatApi {
 }
 
 class Chat {
-  private api_helper: ApiHelper;
   public completions: Completions;
 
   constructor(api_helper: ApiHelper) {
-    this.api_helper = api_helper;
     this.completions = new Completions(api_helper);
   }
 }
@@ -40,7 +38,7 @@ class Completions {
       temperature = '1.0',
       tools = [],
       stream = true,
-      cached  = false
+      cached = false
     } = options;
 
     const { client, conversation, role } = this.api_helper.set_defaults(

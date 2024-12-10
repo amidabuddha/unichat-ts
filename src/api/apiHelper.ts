@@ -3,7 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { Mistral } from '@mistralai/mistralai';
 
 import { MODELS_LIST, MODELS_MAX_TOKEN } from "../models";
-import { AnthropicChunk, ClaudeResponse, ContentBlock, GPTChoice, GPTResponse, GPTToolCall, InputSchema, InputTool, Message, OpenAIChunk, OriginalTool, OutputTool, Role, TextContent, ToolResponse, ToolUseContent } from '../types';
+import { AnthropicChunk, ClaudeResponse, ContentBlock, GPTChoice, GPTResponse, GPTToolCall, InputSchema, InputTool, Message, OpenAIChunk, OriginalTool, OutputTool, Role, TextContent, ToolUseContent } from '../types';
 
 export class ApiHelper {
   private api_key: string;
