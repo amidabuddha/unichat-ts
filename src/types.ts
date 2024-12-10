@@ -1,3 +1,7 @@
+export interface ApiConfig {
+    apiKey: string;
+}
+
 // Chat properties
 export enum Role {
     System = 'system',

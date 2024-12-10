@@ -3,17 +3,34 @@ import Anthropic from '@anthropic-ai/sdk';
 import { Mistral } from '@mistralai/mistralai';
 
 import { MODELS_LIST, MODELS_MAX_TOKEN } from "../models";
-import { AnthropicChunk, ClaudeResponse, ContentBlock, GPTChoice, GPTResponse, GPTToolCall, InputSchema, InputTool, Message, OpenAIChunk, OriginalTool, OutputTool, Role, TextContent, ToolUseContent } from '../types';
+import {
+    AnthropicChunk,
+    ClaudeResponse,
+    ContentBlock,
+    GPTChoice,
+    GPTResponse,
+    GPTToolCall,
+    InputSchema,
+    InputTool,
+    Message,
+    OpenAIChunk,
+    OriginalTool,
+    OutputTool,
+    Role,
+    TextContent,
+    ToolUseContent,
+    ApiConfig
+} from '../types';
 
 export class ApiHelper {
-  private api_key: string;
+  private config: ApiConfig;
   public readonly models: any;
   private max_tokens: Record<string, number>;
   private api_client: any;
   private static DEFAULT_MAX_TOKENS: number = 4096;
 
-  constructor(api_key: string) {
-    this.api_key = api_key;
+  constructor(config: ApiConfig) {
+    this.config = config;
     this.models = MODELS_LIST;
     this.max_tokens = MODELS_MAX_TOKEN;
     this.api_client = null;
@@ -29,21 +46,21 @@ export class ApiHelper {
     }
     let client = undefined;
     if (this.models.mistral_models.includes(model_name)) {
-      client = new Mistral({ apiKey: this.api_key });
+      client = new Mistral({ apiKey: this.config.apiKey });
     } else if (this.models.anthropic_models.includes(model_name)) {
-      client = new Anthropic({ apiKey: this.api_key });
+      client = new Anthropic({ apiKey: this.config.apiKey });
     } else if (this.models.grok_models.includes(model_name)) {
       client = new OpenAI({
-        apiKey: this.api_key,
+        apiKey: this.config.apiKey,
         baseURL: 'https://api.x.ai/v1',
       });
     } else if (this.models.gemini_models.includes(model_name)) {
       client = new OpenAI({
-        apiKey: this.api_key,
+        apiKey: this.config.apiKey,
         baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
       });
     } else if (this.models.openai_models.includes(model_name)) {
-      client = new OpenAI({ apiKey: this.api_key });
+      client = new OpenAI({ apiKey: this.config.apiKey });
     } else {
       throw new Error(`Model '${model_name}' not found.`);
     }

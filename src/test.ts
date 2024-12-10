@@ -250,7 +250,7 @@ async function main() {
     validateInputs(apiKey, modelName);
 
     // Initialize the client
-    const client = new UnifiedChatApi(apiKey);
+    const client = new UnifiedChatApi({apiKey: apiKey});
 
     // Set up system message
     let system = await promptInput("Enter system instructions or leave blank for default: ");
@@ -301,7 +301,7 @@ async function main() {
 
           await handleNonStreamingResponse(response, conversation);
         }
-        console.log("DEBUG: conversation: ", JSON.stringify(conversation, null, 2))
+        // console.log("\nDEBUG: conversation: ", JSON.stringify(conversation, null, 2))
         console.log('\n');
 
       } catch (error: any) {

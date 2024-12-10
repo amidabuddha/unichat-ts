@@ -1,15 +1,15 @@
-import { CreateCompletionOptions, InputTool } from '../types';
+import { ApiConfig, CreateCompletionOptions, InputTool } from '../types';
 import { ApiHelper } from './apiHelper';
 import { ChatHelper } from './chatHelper';
 
 export class UnifiedChatApi {
-  private api_key: string;
+  private config: ApiConfig;
   private api_helper: ApiHelper;
   public chat: Chat;
 
-  constructor(api_key: string) {
-    this.api_key = api_key;
-    this.api_helper = new ApiHelper(this.api_key);
+  constructor({ apiKey }: ApiConfig) {
+    this.config = { apiKey };
+    this.api_helper = new ApiHelper(this.config);
     this.chat = new Chat(this.api_helper);
   }
 }
