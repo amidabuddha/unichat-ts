@@ -1,4 +1,4 @@
-import { GPTResponse, InputTool, Message, OpenAIChunk } from '../types';
+import { InputTool, Message } from '../types';
 import { ApiHelper } from './apiHelper';
 
 export class ChatHelper {
@@ -67,7 +67,7 @@ export class ChatHelper {
             system: this.role,
           });
         } else {
-          return await this.client.beta.prompt_caching.message.create({
+          return await this.client.beta.promptCaching.messages.create({
             ...anthropicParams,
             system: [
                 {"type": "text", "text": this.role},
@@ -102,12 +102,12 @@ export class ChatHelper {
   }
 
   public async handle_response(response: any){
+    console.log("DEBUG: response: ", JSON.stringify(response, null, 2))
     try {
       if (this.api_helper.models.anthropic_models.includes(this.model_name)) {
         response = this.api_helper.convertClaudeToGPT(response)
       }
       // TODO mistral tools
-      // console.log("DEBUG: response: ", JSON.stringify(response, null, 2))
       return response
 
     } catch (e: any) {
