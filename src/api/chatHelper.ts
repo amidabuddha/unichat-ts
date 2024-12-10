@@ -37,48 +37,42 @@ export class ChatHelper {
   public async get_response() {
     try {
       if (this.api_helper.models.mistral_models.includes(this.model_name)) {
+        const mistralParams = {
+          model: this.model_name,
+          temperature: this.temperature,
+          messages: this.messages,
+          ...(this.tools?.length ? { tools: this.api_helper.transformTools(this.tools) } : {})
+        };
         if (this.stream) {
-          return await this.client.chat.stream({
-            model: this.model_name,
-            temperature: this.temperature,
-            messages: this.messages,
-            tools: this.api_helper.transformTools(this.tools)
-          });
+          return await this.client.chat.stream(mistralParams);
         } else {
-          return await this.client.chat.complete({
-            model: this.model_name,
-            temperature: this.temperature,
-            messages: this.messages,
-            tools: this.api_helper.transformTools(this.tools)
-          });
+          return await this.client.chat.complete(mistralParams);
         }
       } else if (this.api_helper.models.anthropic_models.includes(this.model_name)) {
         this.temperature = this.temperature > 1 ? 1 : this.temperature;
         const maxTokens = this.api_helper.get_max_tokens(this.model_name);
         const anthropicMessages = this.api_helper.transformMessages(this.messages)
         // console.log("DEBUG: antropic message: ", JSON.stringify(anthropicMessages, null, 2))
+        const anthropicParams = {
+          model: this.model_name,
+          max_tokens: maxTokens,
+          temperature: this.temperature,
+          messages: anthropicMessages,
+          stream: this.stream,
+          ...(this.tools?.length ? { tools: this.tools } : {})
+        };
         if (this.cached === false) {
           return await this.client.messages.create({
-            model: this.model_name,
-            max_tokens: maxTokens,
-            temperature: this.temperature,
+            ...anthropicParams,
             system: this.role,
-            messages: anthropicMessages,
-            tools: this.tools,
-            stream: this.stream,
           });
         } else {
           return await this.client.beta.prompt_caching.message.create({
-            model: this.model_name,
-            max_tokens: maxTokens,
-            temperature: this.temperature,
+            ...anthropicParams,
             system: [
                 {"type": "text", "text": this.role},
                 {"type": "text", "text": this.cached, "cache_control": {"type": "ephemeral"}},
             ],
-            messages: anthropicMessages,
-            tools: this.tools,
-            stream: this.stream,
           })
         }
       } else if (
@@ -90,8 +84,8 @@ export class ChatHelper {
           model: this.model_name,
           messages: this.messages,
           temperature: this.temperature,
-          tools: this.api_helper.transformTools(this.tools),
           stream: this.stream,
+          ...(this.tools?.length ? { tools: this.api_helper.transformTools(this.tools) } : {})
         });
       } else {
         throw new Error(`Model ${this.model_name} is currently not supported`);
