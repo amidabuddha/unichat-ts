@@ -102,12 +102,16 @@ export class ChatHelper {
   }
 
   public async handle_response(response: any){
-    console.log("DEBUG: response: ", JSON.stringify(response, null, 2))
+    // console.log("DEBUG: response: ", JSON.stringify(response, null, 2))
     try {
       if (this.api_helper.models.anthropic_models.includes(this.model_name)) {
         response = this.api_helper.convertClaudeToGPT(response)
       }
-      // TODO mistral tools
+      else if (
+        this.api_helper.models.mistral_models.includes(this.model_name)
+      ) {
+        response = this.api_helper.transformResponse(response)
+      }
       return response
 
     } catch (e: any) {
@@ -124,19 +128,8 @@ export class ChatHelper {
       } else if (
         this.api_helper.models.mistral_models.includes(this.model_name)
       ) {
-        // TODO mistral tools
-        response = {
-          [Symbol.asyncIterator]: async function* () {
-            for await (const chunk of response) {
-              yield {
-                choices: chunk.data.choices
-              };
-            }
-          }
-        }
+        response = this.api_helper.transformStreamChunk(response);
       }
-      // TODO gemini tools
-      // TODO grok tools
       for await (const chunk of response) {
         // console.log("DEBUG: stream: ", JSON.stringify(chunk, null, 2))
         yield chunk;

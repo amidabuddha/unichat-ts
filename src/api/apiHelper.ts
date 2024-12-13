@@ -355,4 +355,63 @@ export class ApiHelper {
 
     return transformedMessages;
 }
+
+  public transformResponse(response: { usage: { promptTokens: any; completionTokens: any; totalTokens: any; }; choices: any[]; }) {
+    return {
+      ...response,
+      usage: {
+        prompt_tokens: response.usage.promptTokens,
+        completion_tokens: response.usage.completionTokens,
+        total_tokens: response.usage.totalTokens
+      },
+      choices: response.choices.map(choice => ({
+        ...choice,
+        message: {
+          ...choice.message,
+          tool_calls: choice.message.toolCalls?.map((toolCall: any) => ({
+            ...toolCall
+          })),
+        },
+        finish_reason: choice.finishReason
+      }))
+    };
+  }
+
+  public async * transformStreamChunk(stream: ReadableStream<any>) {
+    try {
+      for await (const chunk of stream) {
+        if (!chunk?.data) continue;
+
+        const data = chunk.data;
+        const { toolCalls, finishReason, promptTokens, completionTokens, totalTokens, ...restData } = data;
+
+        yield {
+          ...restData,
+          usage: data.usage ? {
+            prompt_tokens: data.usage.promptTokens,
+            completion_tokens: data.usage.completionTokens,
+            total_tokens: data.usage.totalTokens
+          } : undefined,
+          choices: data.choices.map((choice: { [x: string]: any; delta?: any; finishReason: any; toolCalls?: any; }) => {
+            const { toolCalls: choiceToolCalls, finishReason: choiceFinishReason, ...restChoice } = choice;
+            return {
+              ...restChoice,
+              delta: choice.delta && {
+                ...choice.delta,
+                // Remove toolCalls and only keep tool_calls
+                toolCalls: undefined,
+                tool_calls: choice.delta.toolCalls?.map((toolCall: any) => ({
+                  ...toolCall
+                }))
+              },
+              finish_reason: choice.finishReason
+            };
+          })
+        };
+      }
+    } catch (error) {
+      console.error('Error processing stream:', error);
+      throw error;
+    }
+  }
 }

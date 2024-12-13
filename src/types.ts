@@ -13,7 +13,7 @@ export enum Role {
 export interface Message {
     role: Role;
     content?: string | ContentBlock[] | ToolResult[] | null;
-    tool_calls?: [] | GPTToolCall[];
+    tool_calls?: GPTToolCall[];
     tool_call_id?: string;
 }
 

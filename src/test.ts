@@ -52,6 +52,23 @@ function calculate(operation: Operation, operand1: number, operand2: number): nu
   }
 }
 
+function get_calculation(tool: GPTToolCall){
+  const args = JSON.parse(tool.function.arguments);
+  const result = calculate(
+    args.operation as Operation,
+    Number(args.operand1),
+    Number(args.operand2)
+  );
+
+  const toolResponse: Message = {
+    role: Role.Tool,
+    content: result.toString(),
+    tool_call_id: tool.id
+  };
+
+  return toolResponse
+}
+
 // Tool definitions
 const tools = [
   {
@@ -88,68 +105,55 @@ async function handleStreamingResponse(
   }
 
   let currentContent = "";
-  let isCollectingFunctionArgs = false;
-  let currentAssistantMessage: Message | null = null;
+  let currentAssistantMessage: Message = {
+    role: Role.Assistant,
+    content: "",
+  };
+
+  // Track existing tool calls by their ID
+  const toolCallsById = new Map<string, GPTToolCall>();
+  let lastToolCallIndex = -1;
 
   for await (const chunk of responseStream) {
     const delta = chunk.choices[0].delta;
     const finishReason = chunk.choices[0].finish_reason;
 
-    // Initialize message structure on first assistant chunk
-    if (!currentAssistantMessage && delta.role === 'assistant' && delta.tool_calls) {
-      currentAssistantMessage = {
-        role: Role.Assistant,
-        content: delta.content,
-        tool_calls: delta.tool_calls.map(toolCall => ({
-          id: toolCall.id,
-          type: 'function',
-          function: {
-            name: toolCall.function?.name || "",
-            arguments: toolCall.function?.arguments || ""
-          }
-        }))
-      };
-      continue;
-    } else if (!currentAssistantMessage && delta.role === 'assistant') {
-      currentAssistantMessage = {
-        role: Role.Assistant,
-        content: delta.content,
-      };
-      continue;
-    }
-
     // Handle content updates
     if (delta.content !== undefined && delta.content !== null) {
       currentContent += delta.content;
+      currentAssistantMessage.content = currentContent;
       process.stdout.write(delta.content);
-      if (currentAssistantMessage) {
-        currentAssistantMessage.content = currentContent;
-      }
     }
 
     // Handle tool calls
-    if (delta.tool_calls && currentAssistantMessage) {
-      isCollectingFunctionArgs = true;
-
-      // Initialize tool_calls array if it doesn't exist
+    if (delta.tool_calls && delta.tool_calls.length > 0) {
+      // Initialize tool_calls array if needed
       if (!currentAssistantMessage.tool_calls) {
-        currentAssistantMessage.tool_calls = delta.tool_calls;
-        continue;
+        currentAssistantMessage.tool_calls = [];
       }
+      delta.tool_calls!.forEach((toolCall: GPTToolCall) => {
+        if (toolCall.id) {
+          const newToolCall: GPTToolCall = {
+            id: toolCall.id,
+            type: 'function',
+            function: {
+              name: toolCall.function?.name || "",
+              arguments: toolCall.function?.arguments || ""
+            }
+          };
 
-      delta.tool_calls.forEach((toolCall: GPTToolCall) => {
-        // Find the matching tool call by index
-        const toolCallIndex = toolCall.index || 0;
-        const existingToolCall = currentAssistantMessage!.tool_calls![toolCallIndex];
+          toolCallsById.set(toolCall.id, newToolCall);
+          lastToolCallIndex = currentAssistantMessage.tool_calls!.length;
+          currentAssistantMessage.tool_calls!.push(newToolCall);
+        }
+        else if (toolCall.function?.arguments) {
+          if (lastToolCallIndex >= 0) {
+            const lastToolCall = currentAssistantMessage.tool_calls![lastToolCallIndex];
+            lastToolCall.function.arguments += toolCall.function.arguments;
 
-        if (existingToolCall) {
-          // Update name if provided
-          if (toolCall.function?.name) {
-            existingToolCall.function.name = toolCall.function.name;
-          }
-          // Append arguments if provided
-          if (toolCall.function?.arguments) {
-            existingToolCall.function.arguments += toolCall.function.arguments;
+            if (lastToolCall.id) {
+              toolCallsById.set(lastToolCall.id, lastToolCall);
+            }
           }
         }
       });
@@ -157,54 +161,24 @@ async function handleStreamingResponse(
 
     // Process completion of response
     if (finishReason) {
-      if (finishReason === "tool_calls" && isCollectingFunctionArgs) {
-        try {
-          // Process each tool call
-          if (currentAssistantMessage) {
-            conversation.push(currentAssistantMessage);
-          }
+      try {
+        conversation.push(currentAssistantMessage);
 
-          // Execute each tool and add responses
-          if (currentAssistantMessage?.tool_calls){
-            for (const toolCall of currentAssistantMessage.tool_calls) {
-              const args = JSON.parse(toolCall.function.arguments);
-              const functionName = toolCall.function.name;
-
-              if (functionName === "calculator") {
-                const result = calculate(
-                  args.operation as Operation,
-                  Number(args.operand1),
-                  Number(args.operand2)
-                );
-
-                const toolResponse: Message = {
-                  role: Role.Tool,
-                  content: result.toString(),
-                  tool_call_id: toolCall.id
-                };
-                conversation.push(toolResponse);
-              }
+        // Execute each tool and add responses
+        if (currentAssistantMessage.tool_calls && currentAssistantMessage.tool_calls.length > 0) {
+          for (const toolCall of currentAssistantMessage.tool_calls!) {
+            if (toolCall.function.name === "calculator") {
+              conversation.push(get_calculation(toolCall));
             }
           }
-        } catch (error) {
-          console.error(`Error processing function calls: ${error}`);
         }
-
-        // Reset function call state
-        isCollectingFunctionArgs = false;
-      } else if (finishReason === "stop") {
-        // Add final assistant message to conversation
-        if (currentAssistantMessage) {
-          conversation.push(currentAssistantMessage);
-        }
+      } catch (error) {
+        console.error(`Error processing function calls: ${error}`);
       }
-
-      // Reset message state
-      currentContent = "";
-      currentAssistantMessage = null;
     }
   }
 }
+
 
 async function handleNonStreamingResponse(
   response: any,
@@ -220,20 +194,7 @@ async function handleNonStreamingResponse(
   if (assistantResponse.tool_calls) {
     for (const tool of assistantResponse.tool_calls) {
       if (tool.function.name === "calculator") {
-        const args = JSON.parse(tool.function.arguments);
-        const result = calculate(
-          args.operation,
-          Number(args.operand1),
-          Number(args.operand2)
-        );
-
-        const toolResponse: Message = {
-          role: Role.Tool,
-          content: result.toString(),
-          tool_call_id: tool.id
-        };
-
-        conversation.push(toolResponse);
+        conversation.push(get_calculation(tool));
       }
     }
   }
