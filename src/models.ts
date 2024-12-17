@@ -28,7 +28,7 @@ export const MODELS_LIST =  {
     ]
 }
 export const MODELS_MAX_TOKEN: Record<string, number> =  {
-    "chatgpt-4o-latest": 4096,
+    "chatgpt-4o-latest": 16384,
     "gpt-4o-mini": 16384,
     "gpt-4o": 16384,
     "gpt-4o-2024-11-20": 16384,
