@@ -79,11 +79,14 @@ export class ApiHelper {
       conversation = conversation.filter((message) => message.role !== 'system');
     } else if (model_name.startsWith('o1')) {
       if (conversation[0]?.role === 'system') {
-        const system_content = conversation[0].content;
-        conversation[1].content = `${system_content}\n\n${conversation[1].content}`;
-        conversation = conversation.filter((message) => message.role !== 'system');
+        if (model_name === "o1") {
+          conversation[0].role = "developer";
+        } else {
+          const system_content = conversation[0].content;
+          conversation[1].content = `${system_content}\n\n${conversation[1].content}`;
+          conversation = conversation.filter((message) => message.role !== 'system');
+        }
       }
-      role = '';
     }
     const client = this.get_client(model_name);
     return { client, conversation, role };
@@ -413,5 +416,46 @@ export class ApiHelper {
       console.error('Error processing stream:', error);
       throw error;
     }
+  }
+
+  public cacheMessages(messages: Message[]): Message[] {
+    const result: Message[] = [];
+    let userMessages = 0;
+
+    // Iterate through messages in reverse order
+    for (const message of [...messages].reverse()) {
+        // Add regular user mesasge to cache
+        if (message.role === "user" && userMessages < 2 && typeof message.content === "string") {
+            result.push({
+                role: Role.User,
+                content: [
+                  {
+                    type: "text",
+                    text: message["content"],
+                    cache_control: {"type": "ephemeral"}
+                  }
+                ]
+            });
+            userMessages += 1;
+        }
+        // Add tool result user mesasge to cache
+        else if (message.role === "user" && userMessages < 2 && (Array.isArray(message.content) && message.content.length && typeof message.content[0] === "object")) {
+            result.push({
+              role: Role.User,
+                content: [
+                    {
+                        ...message.content[0],
+                        cache_control: {"type": "ephemeral"}
+                    }
+                ]
+            });
+            userMessages += 1;
+        }
+        else {
+            result.push(message);
+        }
+    }
+
+    return result.reverse();
   }
 }

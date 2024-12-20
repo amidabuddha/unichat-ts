@@ -12,7 +12,7 @@ export enum Role {
 
 export interface Message {
     role: Role;
-    content?: string | ContentBlock[] | ToolResult[] | null;
+    content?: string | ContentBlock[] | null;
     tool_calls?: GPTToolCall[];
     tool_call_id?: string;
 }
@@ -45,6 +45,7 @@ export interface InputTool {
     name: string;
     description: string;
     input_schema: InputSchema;
+    cache_control?: {"type": "ephemeral"};
 }
 
 export interface OutputFunction {
@@ -70,6 +71,7 @@ export interface BaseContent {
 export interface TextContent extends BaseContent {
   type: 'text';
   text: string;
+  cache_control?: {"type": "ephemeral"};
 }
 
 export interface ToolUseContent extends BaseContent {
@@ -77,9 +79,10 @@ export interface ToolUseContent extends BaseContent {
   id: string;
   name?: string;
   input: Record<string, unknown>;
+  cache_control?: {"type": "ephemeral"};
 }
 
-export type ContentBlock = TextContent | ToolUseContent;
+export type ContentBlock = TextContent | ToolResult | ToolUseContent;
 
 export interface ClaudeUsage {
   input_tokens: number;
@@ -231,9 +234,20 @@ export interface ToolResult {
     type: 'tool_result';
     tool_use_id?: string;
     content: any;
+    cache_control?: {"type": "ephemeral"};
 }
 
 export interface TransformedResponse {
     role: Role;
     content: ToolResult[];
+}
+
+export interface ClaudeRequest {
+    model: string;
+    max_tokens: number;
+    temperature: number;
+    stream: boolean;
+    tools?: InputTool[];
+    system?: string | TextContent[];
+    messages?: Message[];
 }

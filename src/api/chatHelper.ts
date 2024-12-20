@@ -1,4 +1,4 @@
-import { InputTool, Message } from '../types';
+import { ClaudeRequest, InputTool, Message } from '../types';
 import { ApiHelper } from './apiHelper';
 
 export class ChatHelper {
@@ -50,31 +50,35 @@ export class ChatHelper {
         }
       } else if (this.api_helper.models.anthropic_models.includes(this.model_name)) {
         this.temperature = this.temperature > 1 ? 1 : this.temperature;
-        const maxTokens = this.api_helper.get_max_tokens(this.model_name);
-        const anthropicMessages = this.api_helper.transformMessages(this.messages)
-        // console.log("DEBUG: antropic message: ", JSON.stringify(anthropicMessages, null, 2))
-        const anthropicParams = {
-          model: this.model_name,
-          max_tokens: maxTokens,
-          temperature: this.temperature,
-          messages: anthropicMessages,
-          stream: this.stream,
-          ...(this.tools?.length ? { tools: this.tools } : {})
+        const anthropicMessages = this.api_helper.transformMessages(this.messages);
+        const anthropicParams: ClaudeRequest = {
+            model: this.model_name,
+            max_tokens: this.api_helper.get_max_tokens(this.model_name),
+            temperature: this.temperature,
+            stream: this.stream,
         };
-        if (this.cached === false) {
-          return await this.client.messages.create({
-            ...anthropicParams,
-            system: this.role,
-          });
-        } else {
-          return await this.client.beta.promptCaching.messages.create({
-            ...anthropicParams,
-            system: [
-                {"type": "text", "text": this.role},
-                {"type": "text", "text": this.cached, "cache_control": {"type": "ephemeral"}},
-            ],
-          })
+
+        if (this.tools?.length) {
+            this.tools[this.tools.length - 1] = {
+                ...this.tools[this.tools.length - 1],
+                cache_control: { type: "ephemeral" }
+            };
+            anthropicParams.tools = this.tools;
         }
+
+        if (this.cached === false) {
+            anthropicParams.system = this.role;
+        } else {
+            anthropicParams.system = [
+                { type: "text", text: this.role },
+                { type: "text", text: this.cached as string, cache_control: { type: "ephemeral" } },
+            ];
+        }
+
+        anthropicParams.messages = this.api_helper.cacheMessages(anthropicMessages);
+
+        return await this.client.messages.create(anthropicParams);
+
       } else if (
         this.api_helper.models.grok_models.includes(this.model_name) ||
         this.api_helper.models.openai_models.includes(this.model_name) ||
