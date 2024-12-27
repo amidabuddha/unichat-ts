@@ -59,6 +59,11 @@ export class ApiHelper {
         apiKey: this.config.apiKey,
         baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
       });
+    } else if (this.models.deepseek_models.includes(model_name)) {
+      client = new OpenAI({
+        apiKey: this.config.apiKey,
+        baseURL: 'https://api.deepseek.com/v1',
+      });
     } else if (this.models.openai_models.includes(model_name)) {
       client = new OpenAI({ apiKey: this.config.apiKey });
     } else {

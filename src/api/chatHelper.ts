@@ -82,7 +82,8 @@ export class ChatHelper {
       } else if (
         this.api_helper.models.grok_models.includes(this.model_name) ||
         this.api_helper.models.openai_models.includes(this.model_name) ||
-        this.api_helper.models.gemini_models.includes(this.model_name)
+        this.api_helper.models.gemini_models.includes(this.model_name) ||
+        this.api_helper.models.deepseek_models.includes(this.model_name)
       ) {
         return await this.client.chat.completions.create({
           model: this.model_name,
