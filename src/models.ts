@@ -6,7 +6,8 @@ export const MODELS_LIST =  {
     ],
     "mistral_models": [
         "mistral-small-latest",
-        "mistral-large-latest"
+        "mistral-large-latest",
+        "codestral-latest"
     ],
     "openai_models": [
         "chatgpt-4o-latest",
@@ -41,6 +42,7 @@ export const MODELS_MAX_TOKEN: Record<string, number> =  {
     "o1": 100000,
     "mistral-small-latest": 32000,
     "mistral-large-latest": 128000,
+    "codestral-latest": 256000,
     "claude-3-5-haiku-latest": 8192,
     "claude-3-5-sonnet-latest": 8192,
     "claude-3-opus-latest": 4096,
