@@ -29,7 +29,8 @@ export const MODELS_LIST =  {
         "gemini-exp-1206"
     ],
     "deepseek_models": [
-        "deepseek-chat"
+        "deepseek-chat",
+        "deepseek-reasoner"
     ]
 }
 export const MODELS_MAX_TOKEN: Record<string, number> =  {
@@ -52,5 +53,6 @@ export const MODELS_MAX_TOKEN: Record<string, number> =  {
     "gemini-2.0-flash-exp": 8192,
     "gemini-2.0-flash-thinking-exp": 8192,
     "gemini-exp-1206": 8192,
-    "deepseek-chat": 8192
+    "deepseek-chat": 8192,
+    "deepseek-reasoner": 8192
 }
