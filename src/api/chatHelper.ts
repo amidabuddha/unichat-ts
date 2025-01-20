@@ -82,8 +82,7 @@ export class ChatHelper {
       } else if (
         this.api_helper.models.grok_models.includes(this.model_name) ||
         this.api_helper.models.openai_models.includes(this.model_name) ||
-        this.api_helper.models.gemini_models.includes(this.model_name) ||
-        this.api_helper.models.deepseek_models.includes(this.model_name)
+        this.api_helper.models.gemini_models.includes(this.model_name)
       ) {
         return await this.client.chat.completions.create({
           model: this.model_name,
@@ -92,6 +91,24 @@ export class ChatHelper {
           stream: this.stream,
           ...(this.tools?.length ? { tools: this.api_helper.transformTools(this.tools) } : {})
         });
+      } else if (
+        this.api_helper.models.deepseek_models.includes(this.model_name)
+      ) {
+        const params: any = {
+          model: this.model_name,
+          messages: this.messages,
+          stream: this.stream
+        };
+
+        if (!this.model_name.endsWith("reasoner")) {
+          params.temperature = this.temperature;
+
+          if (this.tools?.length) {
+            params.tools = this.api_helper.transformTools(this.tools);
+          }
+        }
+
+        return await this.client.chat.completions.create(params);
       } else {
         throw new Error(`Model ${this.model_name} is currently not supported`);
       }
