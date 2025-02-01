@@ -31,6 +31,11 @@ export const MODELS_LIST =  {
     "deepseek_models": [
         "deepseek-chat",
         "deepseek-reasoner"
+    ],
+    "alibaba_models": [
+        "qwen-turbo-latest",
+        "qwen-plus-latest",
+        "qwen-max-latest"
     ]
 }
 export const MODELS_MAX_TOKEN: Record<string, number> =  {
@@ -54,5 +59,8 @@ export const MODELS_MAX_TOKEN: Record<string, number> =  {
     "gemini-2.0-flash-thinking-exp": 8192,
     "gemini-exp-1206": 8192,
     "deepseek-chat": 8192,
-    "deepseek-reasoner": 8192
+    "deepseek-reasoner": 8192,
+    "qwen-turbo-latest": 8192,
+    "qwen-plus-latest": 8192,
+    "qwen-max-latest": 8192
 }
