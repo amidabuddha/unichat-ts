@@ -1,5 +1,5 @@
 # unichat
-Universal API chat Node.js client for OpenAI, MistralAI, Anthropic, xAI, Google AI and DeepSeek.
+Universal API chat Node.js client for OpenAI, MistralAI, Anthropic, xAI, Google AI, DeepSeek and Alibaba.
 
 ## Build sequence:
 ```shell

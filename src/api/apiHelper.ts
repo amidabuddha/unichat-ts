@@ -64,6 +64,11 @@ export class ApiHelper {
         apiKey: this.config.apiKey,
         baseURL: 'https://api.deepseek.com/v1',
       });
+    } else if (this.models.alibaba_models.includes(model_name)) {
+      client = new OpenAI({
+        apiKey: this.config.apiKey,
+        baseURL: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      });
     } else if (this.models.openai_models.includes(model_name)) {
       client = new OpenAI({ apiKey: this.config.apiKey });
     } else {
