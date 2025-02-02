@@ -101,6 +101,9 @@ export class ChatHelper {
           }
         }
 
+        if (this.model_name === "o3-mini") {
+          params.reasoning_effort = "high";}
+
         return await this.client.chat.completions.create(params);
 
       } else {

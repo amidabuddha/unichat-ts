@@ -87,16 +87,17 @@ export class ApiHelper {
     if (this.models.anthropic_models.includes(model_name)) {
       role = conversation[0]?.role === 'system' ? conversation[0].content : '';
       conversation = conversation.filter((message) => message.role !== 'system');
-    } else if (model_name.startsWith('o1')) {
-      if (conversation[0]?.role === 'system') {
-        if (model_name === "o1") {
-          conversation[0].role = "developer";
-        } else {
-          const system_content = conversation[0].content;
-          conversation[1].content = `${system_content}\n\n${conversation[1].content}`;
-          conversation = conversation.filter((message) => message.role !== 'system');
+    } else if (model_name.startsWith("o1") || model_name.startsWith("o3")) {
+        if (conversation[0]?.role === "system") {
+            if (model_name === "o1-mini" || model_name === "o1-prewiew") {
+                const systemContent = conversation[0].content;
+                conversation[1].content = `${systemContent}\n\n${conversation[1].content}`;
+                conversation = conversation.filter(message => message.role !== "system");
+            } else {
+                conversation[0].role = "developer";
+                conversation[0].content = `Formatting re-enabled\n${conversation[0].content}`;
+            }
         }
-      }
     }
     const client = this.get_client(model_name);
     return { client, conversation, role };
