@@ -13,10 +13,10 @@
   "license": "MIT",
   "description": "Universal API chat Node.js client for OpenAI, MistralAI, Anthropic, xAI, Google AI, DeepSeek and Alibaba.",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.36.3",
+    "@anthropic-ai/sdk": "^0.37.0",
     "@mistralai/mistralai": "^1.5.0",
     "axios": "^1.7.8",
-    "openai": "^4.83.0"
+    "openai": "^4.85.4"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
