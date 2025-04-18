@@ -24,7 +24,8 @@ export const MODELS_LIST =  {
         "o1-preview",
         "o1",
         "o3-mini",
-        "o3"
+        "o3",
+        "o4-mini"
     ],
     "grok_models": [
         "grok-3-latest",
@@ -34,9 +35,8 @@ export const MODELS_LIST =  {
         "grok-2-vision-latest"
     ],
     "gemini_models": [
-        "gemini-2.0-flash-lite",
-        "gemini-2.0-flash",
         "gemini-2.0-flash-thinking-exp",
+        "gemini-2.5-flash-preview-04-17",
         "gemini-2.5-pro-exp-03-25",
         "gemini-2.5-pro-preview-03-25"
     ],
@@ -82,9 +82,8 @@ export const MODELS_MAX_TOKEN: Record<string, number> =  {
     "grok-3-mini-latest": 131072,
     "grok-3-mini-fast-latest": 131072,
     "grok-2-vision-latest": 32768,
-    "gemini-2.0-flash-lite": 8192,
-    "gemini-2.0-flash": 8192,
     "gemini-2.0-flash-thinking-exp": 8192,
+    "gemini-2.5-flash-preview-04-17": 65536,
     "gemini-2.5-pro-exp-03-25": 8192,
     "gemini-2.5-pro-preview-03-25": 8192,
     "deepseek-chat": 8192,
