@@ -44,8 +44,10 @@ export const MODELS_LIST =  {
         "qwen-turbo-latest",
         "qwen-plus-latest",
         "qwen-max-latest",
+        "qwq-plus",
         "qvq-max",
-        "qwq-plus"
+        "qwen-vl-max",
+        "qwen-vl-plus"
     ],
     "inception_models": [
         "mercury-coder-small"
@@ -84,7 +86,9 @@ export const MODELS_MAX_TOKEN: Record<string, number> =  {
     "qwen-turbo-latest": 8192,
     "qwen-plus-latest": 8192,
     "qwen-max-latest": 8192,
-    "qvq-max": 8192,
     "qwq-plus": 8192,
+    "qvq-max": 8192,
+    "qwen-vl-max": 2048,
+    "qwen-vl-plus": 2048,
     "mercury-coder-small": 32000
 }
