@@ -7,8 +7,8 @@ export class UnifiedChatApi {
   private api_helper: ApiHelper;
   public chat: Chat;
 
-  constructor({ apiKey }: ApiConfig) {
-    this.config = { apiKey };
+  constructor({ apiKey, baseUrl }: ApiConfig) {
+    this.config = { apiKey, baseUrl };
     this.api_helper = new ApiHelper(this.config);
     this.chat = new Chat(this.api_helper);
   }
@@ -38,7 +38,8 @@ class Completions {
       temperature = '1.0',
       tools = [],
       stream = true,
-      cached = false
+      cached = false,
+      reasoningEffort = false
     } = options;
 
     const { client, conversation, role } = this.api_helper.set_defaults(
@@ -61,6 +62,7 @@ class Completions {
       cached,
       client,
       role,
+      reasoningEffort,
     );
 
     const response = await this.chat_helper.get_response();

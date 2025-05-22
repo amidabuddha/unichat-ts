@@ -1,5 +1,6 @@
 export interface ApiConfig {
     apiKey: string;
+    baseUrl?: string;
 }
 
 // Chat properties
@@ -24,6 +25,7 @@ export interface CreateCompletionOptions {
     tools?: OriginalTool[] | OutputTool[],
     stream?: boolean;
     cached?: boolean | string;
+    reasoningEffort?: boolean | string;
 }
 
 // Tools transformation
@@ -82,7 +84,24 @@ export interface ToolUseContent extends BaseContent {
   cache_control?: {"type": "ephemeral"};
 }
 
-export type ContentBlock = TextContent | ToolResult | ToolUseContent;
+// Anthropic specific content blocks - based on Python's block_to_dict for 'thinking'
+export interface AnthropicThinkingBlock extends BaseContent {
+  type: 'thinking';
+  text: string; // Assuming 'thinking' block has a text field like Python's self.thinking
+  // Python's block_to_dict for thinking also had 'thinking' and 'signature'
+  // For now, let's keep it simple. If these are needed, they can be added.
+  // thinking?: string; // Raw thinking content
+  // signature?: string; // Signature if any
+  cache_control?: {"type": "ephemeral"};
+}
+
+export interface AnthropicRedactedThinkingBlock extends BaseContent {
+    type: 'redacted_thinking';
+    // data: any; // Or specific structure if known
+    cache_control?: {"type": "ephemeral"};
+}
+
+export type ContentBlock = TextContent | ToolResult | ToolUseContent | AnthropicThinkingBlock | AnthropicRedactedThinkingBlock;
 
 export interface ClaudeUsage {
   input_tokens: number;
@@ -232,9 +251,11 @@ export interface ToolResponse {
 
 export interface ToolResult {
     type: 'tool_result';
-    tool_use_id?: string;
-    content: any;
+    tool_use_id?: string; // This is the ID of the tool_use block this result corresponds to
+    content: string | ContentBlock[]; // Content can be a simple string or a list of further content blocks (e.g. text)
+    is_error?: boolean; // Optional: indicates if the tool execution resulted in an error
     cache_control?: {"type": "ephemeral"};
+    id?: string; // Anthropic SDK sometimes includes an 'id' for tool_result blocks in responses
 }
 
 export interface TransformedResponse {
@@ -248,6 +269,10 @@ export interface ClaudeRequest {
     temperature: number;
     stream: boolean;
     tools?: InputTool[];
-    system?: string | TextContent[];
-    messages?: Message[];
+    system?: string | TextContent[]; // System prompt can be a string or an array containing a TextContent block
+    messages?: Message[]; // Messages should be an array of Message interface compliant objects
+    metadata?: { // Added based on ChatHelper usage for thinking_effort
+        thinking_effort?: string;
+        [key: string]: any; // Allow other metadata properties
+    };
 }
