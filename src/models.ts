@@ -36,7 +36,7 @@ export const MODELS_LIST =  {
     ],
     "gemini_models": [
         "gemini-2.5-flash-preview-05-20",
-        "gemini-2.5-pro-preview-05-06"
+        "gemini-2.5-pro-preview-06-05"
     ],
     "deepseek_models": [
         "deepseek-chat",
@@ -73,6 +73,7 @@ export const MODELS_MAX_TOKEN: Record<string, number> =  {
     "mistral-large-latest": 128000,
     "codestral-latest": 256000,
     "pixtral-large-latest": 128000,
+    "magistral-medium-latest": 40000,
     "claude-3-5-haiku-latest": 8192,
     "claude-3-5-sonnet-latest": 8192,
     "claude-3-7-sonnet-latest": 64000,
@@ -84,7 +85,7 @@ export const MODELS_MAX_TOKEN: Record<string, number> =  {
     "grok-3-mini-fast-latest": 131072,
     "grok-2-vision-latest": 32768,
     "gemini-2.5-flash-preview-05-20": 65536,
-    "gemini-2.5-pro-preview-05-06": 8192,
+    "gemini-2.5-pro-preview-06-05": 8192,
     "deepseek-chat": 8192,
     "deepseek-reasoner": 8192,
     "qwen-turbo-latest": 8192,
