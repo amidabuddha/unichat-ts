@@ -1,6 +1,6 @@
 {
   "name": "unichat-ts",
-  "version": "2.3.30",
+  "version": "2.3.31",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
