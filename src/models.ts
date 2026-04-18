@@ -2,7 +2,8 @@ export const MODELS_LIST =  {
     "anthropic_models": [
         "claude-haiku-4-5",
         "claude-sonnet-4-6",
-        "claude-opus-4-6"
+        "claude-opus-4-6",
+        "claude-opus-4-7"
     ],
     "mistral_models": [
         "mistral-small-latest",
@@ -36,6 +37,7 @@ export const MODELS_MAX_TOKEN: Record<string, number> =  {
     "claude-haiku-4-5": 64000,
     "claude-sonnet-4-6": 64000,
     "claude-opus-4-6": 128000,
+    "claude-opus-4-7": 128000,
     "gemini-3.1-flash-lite-preview": 1048576,
     "gemini-3-flash-preview": 1048576,
     "gemini-3.1-pro-preview": 1048576,
