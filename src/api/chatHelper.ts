@@ -36,19 +36,7 @@ export class ChatHelper {
 
   public async get_response() {
     try {
-      if (this.api_helper.models.mistral_models.includes(this.model_name)) {
-        const mistralParams = {
-          model: this.model_name,
-          temperature: this.temperature,
-          messages: this.messages,
-          ...(this.tools?.length ? { tools: this.api_helper.transformTools(this.tools) } : {})
-        };
-        if (this.stream) {
-          return await this.client.chat.stream(mistralParams);
-        } else {
-          return await this.client.chat.complete(mistralParams);
-        }
-      } else if (this.api_helper.models.anthropic_models.includes(this.model_name)) {
+      if (this.api_helper.has_model("anthropic_models", this.model_name)) {
         this.temperature = this.temperature > 1 ? 1 : this.temperature;
         const anthropicMessages = this.api_helper.transformMessages(this.messages);
         const anthropicParams: ClaudeRequest = {
@@ -79,13 +67,7 @@ export class ChatHelper {
 
         return await this.client.messages.create(anthropicParams);
 
-      } else if (
-        this.api_helper.models.grok_models.includes(this.model_name) ||
-        this.api_helper.models.openai_models.includes(this.model_name) ||
-        this.api_helper.models.gemini_models.includes(this.model_name) ||
-        this.api_helper.models.deepseek_models.includes(this.model_name) ||
-        this.api_helper.models.alibaba_models.includes(this.model_name)
-      ) {
+      } else {
         const params: any = {
           model: this.model_name,
           messages: this.messages,
@@ -105,9 +87,6 @@ export class ChatHelper {
           params.reasoning_effort = "high";}
 
         return await this.client.chat.completions.create(params);
-
-      } else {
-        throw new Error(`Model ${this.model_name} is currently not supported`);
       }
     } catch (e: any) {
       if (e.response) {
@@ -123,13 +102,8 @@ export class ChatHelper {
   public async handle_response(response: any){
     // console.log("DEBUG: response: ", JSON.stringify(response, null, 2))
     try {
-      if (this.api_helper.models.anthropic_models.includes(this.model_name)) {
+      if (this.api_helper.has_model("anthropic_models", this.model_name)) {
         response = this.api_helper.convertClaudeToGPT(response)
-      }
-      else if (
-        this.api_helper.models.mistral_models.includes(this.model_name)
-      ) {
-        response = this.api_helper.transformResponse(response)
       }
       return response
 
@@ -141,13 +115,9 @@ export class ChatHelper {
   public async *handle_stream(response: any){
     try {
       if (
-        this.api_helper.models.anthropic_models.includes(this.model_name)
+        this.api_helper.has_model("anthropic_models", this.model_name)
       ) {
         response = this.api_helper.transformStream(response);
-      } else if (
-        this.api_helper.models.mistral_models.includes(this.model_name)
-      ) {
-        response = this.api_helper.transformStreamChunk(response);
       }
       for await (const chunk of response) {
         // console.log("DEBUG: stream: ", JSON.stringify(chunk, null, 2))

@@ -1,6 +1,5 @@
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
-import { Mistral } from '@mistralai/mistralai';
 
 import { MODELS_LIST, MODELS_MAX_TOKEN } from "../models";
 import {
@@ -24,59 +23,48 @@ import {
 
 export class ApiHelper {
   private config: ApiConfig;
-  public readonly models: any;
+  public readonly models: Record<string, string[] | undefined>;
   private max_tokens: Record<string, number>;
-  private api_client: any;
+  private api_clients: {
+    anthropic?: Anthropic;
+    openai?: OpenAI;
+  };
   private static DEFAULT_MAX_TOKENS: number = 4096;
 
   constructor(config: ApiConfig) {
     this.config = config;
-    this.models = MODELS_LIST;
+    this.models = { ...MODELS_LIST };
     this.max_tokens = MODELS_MAX_TOKEN;
-    this.api_client = null;
+    this.api_clients = {};
   }
 
   public get_max_tokens(model_name: string): number {
     return this.max_tokens[model_name] || ApiHelper.DEFAULT_MAX_TOKENS;
   }
 
+  public get_model_list(providerKey: string): string[] {
+    return this.models[providerKey] ?? [];
+  }
+
+  public has_model(providerKey: string, model_name: string): boolean {
+    return this.get_model_list(providerKey).includes(model_name);
+  }
+
   public get_client(model_name: string): any {
-    if (this.api_client) {
-      return this.api_client;
-    }
-    let client = undefined;
-    if (this.models.mistral_models.includes(model_name)) {
-      client = new Mistral({ apiKey: this.config.apiKey });
-    } else if (this.models.anthropic_models.includes(model_name)) {
-      client = new Anthropic({ apiKey: this.config.apiKey });
-    } else if (this.models.grok_models.includes(model_name)) {
-      client = new OpenAI({
-        apiKey: this.config.apiKey,
-        baseURL: 'https://api.x.ai/v1',
-      });
-    } else if (this.models.gemini_models.includes(model_name)) {
-      client = new OpenAI({
-        apiKey: this.config.apiKey,
-        baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
-      });
-    } else if (this.models.deepseek_models.includes(model_name)) {
-      client = new OpenAI({
-        apiKey: this.config.apiKey,
-        baseURL: 'https://api.deepseek.com/v1',
-      });
-    } else if (this.models.alibaba_models.includes(model_name)) {
-      client = new OpenAI({
-        apiKey: this.config.apiKey,
-        baseURL: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
-      });
-    } else if (this.models.openai_models.includes(model_name)) {
-      client = new OpenAI({ apiKey: this.config.apiKey });
-    } else {
-      throw new Error(`Model '${model_name}' not found.`);
+    if (this.has_model("anthropic_models", model_name)) {
+      if (!this.api_clients.anthropic) {
+        this.api_clients.anthropic = new Anthropic({ apiKey: this.config.apiKey });
+      }
+      return this.api_clients.anthropic;
     }
 
-    this.api_client = client;
-    return client;
+    if (!this.api_clients.openai) {
+      this.api_clients.openai = new OpenAI({
+        apiKey: this.config.apiKey,
+        ...(this.config.baseURL ? { baseURL: this.config.baseURL } : {})
+      });
+    }
+    return this.api_clients.openai;
   }
 
   public set_defaults(
@@ -84,7 +72,7 @@ export class ApiHelper {
     conversation: any[],
   ) {
     let role = '';
-    if (this.models.anthropic_models.includes(model_name)) {
+    if (this.has_model("anthropic_models", model_name)) {
       role = conversation[0]?.role === 'system' ? conversation[0].content : '';
       conversation = conversation.filter((message) => message.role !== 'system');
     } else if (model_name.startsWith("o1") || model_name.startsWith("o3")) {
@@ -369,65 +357,6 @@ export class ApiHelper {
 
     return transformedMessages;
 }
-
-  public transformResponse(response: { usage: { promptTokens: any; completionTokens: any; totalTokens: any; }; choices: any[]; }) {
-    return {
-      ...response,
-      usage: {
-        prompt_tokens: response.usage.promptTokens,
-        completion_tokens: response.usage.completionTokens,
-        total_tokens: response.usage.totalTokens
-      },
-      choices: response.choices.map(choice => ({
-        ...choice,
-        message: {
-          ...choice.message,
-          tool_calls: choice.message.toolCalls?.map((toolCall: any) => ({
-            ...toolCall
-          })),
-        },
-        finish_reason: choice.finishReason
-      }))
-    };
-  }
-
-  public async * transformStreamChunk(stream: ReadableStream<any>) {
-    try {
-      for await (const chunk of stream) {
-        if (!chunk?.data) continue;
-
-        const data = chunk.data;
-        const { toolCalls, finishReason, promptTokens, completionTokens, totalTokens, ...restData } = data;
-
-        yield {
-          ...restData,
-          usage: data.usage ? {
-            prompt_tokens: data.usage.promptTokens,
-            completion_tokens: data.usage.completionTokens,
-            total_tokens: data.usage.totalTokens
-          } : undefined,
-          choices: data.choices.map((choice: { [x: string]: any; delta?: any; finishReason: any; toolCalls?: any; }) => {
-            const { toolCalls: choiceToolCalls, finishReason: choiceFinishReason, ...restChoice } = choice;
-            return {
-              ...restChoice,
-              delta: choice.delta && {
-                ...choice.delta,
-                // Remove toolCalls and only keep tool_calls
-                toolCalls: undefined,
-                tool_calls: choice.delta.toolCalls?.map((toolCall: any) => ({
-                  ...toolCall
-                }))
-              },
-              finish_reason: choice.finishReason
-            };
-          })
-        };
-      }
-    } catch (error) {
-      console.error('Error processing stream:', error);
-      throw error;
-    }
-  }
 
   public cacheMessages(messages: Message[]): Message[] {
     const result: Message[] = [];

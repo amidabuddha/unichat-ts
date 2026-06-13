@@ -7,8 +7,8 @@ export class UnifiedChatApi {
   private api_helper: ApiHelper;
   public chat: Chat;
 
-  constructor({ apiKey }: ApiConfig) {
-    this.config = { apiKey };
+  constructor({ apiKey, baseURL }: ApiConfig) {
+    this.config = { apiKey, baseURL };
     this.api_helper = new ApiHelper(this.config);
     this.chat = new Chat(this.api_helper);
   }

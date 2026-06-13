@@ -1,5 +1,6 @@
 export interface ApiConfig {
     apiKey: string;
+    baseURL?: string;
 }
 
 // Chat properties
