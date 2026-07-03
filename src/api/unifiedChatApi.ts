@@ -38,7 +38,8 @@ class Completions {
       temperature = '1.0',
       tools = [],
       stream = true,
-      cached = false
+      cached = false,
+      reasoning_effort = false
     } = options;
 
     const { client, conversation, role } = this.api_helper.set_defaults(
@@ -59,6 +60,7 @@ class Completions {
       inputTools,
       stream,
       cached,
+      reasoning_effort,
       client,
       role,
     );

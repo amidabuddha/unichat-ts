@@ -1,6 +1,6 @@
 {
   "name": "unichat-ts",
-  "version": "2.4.2",
+  "version": "2.4.3",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -14,9 +14,9 @@
   "license": "MIT",
   "description": "Universal API chat Node.js client for OpenAI, MistralAI, Anthropic, xAI, Google AI, or any OpenAI SDK LLM provider.",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.37.0",
-    "axios": "^1.17.0",
-    "openai": "^4.85.4"
+    "@anthropic-ai/sdk": "^0.110.0",
+    "axios": "^1.18.1",
+    "openai": "^6.45.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

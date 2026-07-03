@@ -25,6 +25,7 @@ export interface CreateCompletionOptions {
     tools?: OriginalTool[] | OutputTool[],
     stream?: boolean;
     cached?: boolean | string;
+    reasoning_effort?: boolean | string;
 }
 
 // Tools transformation
@@ -79,11 +80,24 @@ export interface ToolUseContent extends BaseContent {
   type: 'tool_use';
   id: string;
   name?: string;
-  input: Record<string, unknown>;
+  input: Record<string, unknown> | string;
   cache_control?: {"type": "ephemeral"};
 }
 
-export type ContentBlock = TextContent | ToolResult | ToolUseContent;
+export interface ThinkingContent extends BaseContent {
+  type: 'thinking';
+  thinking: string;
+  signature: string;
+  cache_control?: {"type": "ephemeral"};
+}
+
+export interface RedactedThinkingContent extends BaseContent {
+  type: 'redacted_thinking';
+  data: string;
+  cache_control?: {"type": "ephemeral"};
+}
+
+export type ContentBlock = TextContent | ToolResult | ToolUseContent | ThinkingContent | RedactedThinkingContent;
 
 export interface ClaudeUsage {
   input_tokens: number;
@@ -118,6 +132,7 @@ export interface GPTToolCall {
 export interface GPTMessage {
   role: string;
   content: string | null;
+  reasoning_content?: string;
   tool_calls?: GPTToolCall[];
 }
 
@@ -125,7 +140,7 @@ export interface GPTChoice {
   index: number;
   message: GPTMessage;
   logprobs: null;
-  finish_reason: 'stop' | 'length' | 'content_filter' | 'tool_calls' | 'function_call';
+  finish_reason: string | null;
 }
 
 export interface GPTResponse {
@@ -169,6 +184,7 @@ export interface AnthropicContentBlockStart {
         id?: string;
         name?: string;
         input?: Record<string, any>;
+        data?: string;
     };
 }
 
@@ -176,9 +192,11 @@ export interface AnthropicContentBlockDelta {
     type: 'content_block_delta';
     index: number;
     delta: {
-        type: 'text_delta' | 'input_json_delta';
+        type: 'text_delta' | 'input_json_delta' | 'thinking_delta' | 'signature_delta';
         text?: string;
         partial_json?: string;
+        thinking?: string;
+        signature?: string;
     };
 }
 
@@ -216,6 +234,7 @@ export interface OpenAIChunk {
         delta: {
             role?: string;
             content?: string | null;
+            reasoning_content?: string;
             tool_calls?: GPTToolCall[];
             refusal?: null;
         };
@@ -240,15 +259,22 @@ export interface ToolResult {
 
 export interface TransformedResponse {
     role: Role;
-    content: ToolResult[];
+    content: ContentBlock[];
 }
 
 export interface ClaudeRequest {
     model: string;
     max_tokens: number;
-    temperature: number;
+    temperature?: number;
     stream: boolean;
     tools?: InputTool[];
     system?: string | TextContent[];
     messages?: Message[];
+    thinking?: {
+        type: "adaptive";
+        display: "summarized";
+    };
+    output_config?: {
+        effort: string;
+    };
 }
