@@ -15,7 +15,6 @@
   "description": "Universal API chat Node.js client for OpenAI, MistralAI, Anthropic, xAI, Google AI, or any OpenAI SDK LLM provider.",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.110.0",
-    "axios": "^1.18.1",
     "openai": "^6.45.0"
   },
   "devDependencies": {
